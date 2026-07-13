@@ -2,14 +2,22 @@
 
 namespace App\Models;
 
+use App\Enums\MessageType;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Message extends Model
 {
-    use SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
+
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
 
     protected $fillable = [
         'uuid',
@@ -25,36 +33,40 @@ class Message extends Model
         'edited_at',
     ];
 
-    protected $casts = [
-        'metadata' => 'array',
-        'sent_at' => 'datetime',
-        'edited_at' => 'datetime',
-        'deleted_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'message_type' => MessageType::class,
+            'metadata' => 'array',
+            'sent_at' => 'datetime',
+            'edited_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
-    public function conversation()
+    public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);
     }
 
-    public function sender()
+    public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
     }
 
-    public function parentMessage()
+    public function parentMessage(): BelongsTo
     {
-        return $this->belongsTo(Message::class, 'parent_message_id');
+        return $this->belongsTo(self::class, 'parent_message_id');
     }
 
-    public function replyTo()
+    public function replyTo(): BelongsTo
     {
-        return $this->belongsTo(Message::class, 'reply_to_id');
+        return $this->belongsTo(self::class, 'reply_to_id');
     }
 
-    public function forwardedFrom()
+    public function forwardedFrom(): BelongsTo
     {
-        return $this->belongsTo(Message::class, 'forwarded_from_id');
+        return $this->belongsTo(self::class, 'forwarded_from_id');
     }
 
     public function attachments(): HasMany
@@ -67,8 +79,18 @@ class Message extends Model
         return $this->hasMany(MessageRead::class);
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(MessageDelivery::class);
+    }
+
     public function reactions(): HasMany
     {
         return $this->hasMany(MessageReaction::class);
+    }
+
+    public function pins(): HasMany
+    {
+        return $this->hasMany(MessagePin::class);
     }
 }

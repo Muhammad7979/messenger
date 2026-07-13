@@ -17,48 +17,25 @@ return new class extends Migration
             // Public UUID
             $table->uuid('uuid')->unique();
 
-            // Conversation Type
-            // $table->enum('type', [
-            //     'private',
-            //     'group',
-            //     'channel',
-            // ]);
+            // Conversation Type: private=1, group=2, channel=3
+            $table->unsignedTinyInteger('type');
 
-            $table->tinyInteger('type');
-
-            // User who created the conversation
+            // User who created the conversation (restrict so history is preserved)
             $table->foreignId('created_by')
                 ->constrained('users')
-                ->cascadeOnDelete();
+                ->restrictOnDelete();
 
-            // Conversation Name
             // Nullable because private chats usually don't have a name.
             $table->string('name')->nullable();
 
-            // Last Message ID (nullable until first message is sent)
+            // Denormalized pointer; FK added after messages table exists.
             $table->unsignedBigInteger('last_message_id')->nullable();
 
             $table->timestamps();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Indexes
-            |--------------------------------------------------------------------------
-            */
-
             $table->index('type');
             $table->index('created_by');
-
-            /*
-            |--------------------------------------------------------------------------
-            | Foreign Key
-            |--------------------------------------------------------------------------
-            */
-
-            $table->foreign('last_message_id')
-                ->references('id')
-                ->on('messages')
-                ->nullOnDelete();
+            $table->index('last_message_id');
         });
     }
 

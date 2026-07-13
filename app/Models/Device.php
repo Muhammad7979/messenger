@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\DevicePlatform;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -13,27 +14,11 @@ class Device extends Model
 {
     use HasFactory, HasUuids;
 
-    /**
-     * Platforms
-     */
-    public const PLATFORM_ANDROID = 'android';
-    public const PLATFORM_IOS = 'ios';
-    public const PLATFORM_WEB = 'web';
-    public const PLATFORM_WINDOWS = 'windows';
-    public const PLATFORM_MACOS = 'macos';
-    public const PLATFORM_LINUX = 'linux';
-
-    /**
-     * UUID column.
-     */
     public function uniqueIds(): array
     {
         return ['device_uuid'];
     }
 
-    /**
-     * Mass assignable attributes.
-     */
     protected $fillable = [
         'user_id',
         'device_uuid',
@@ -49,12 +34,10 @@ class Device extends Model
         'is_active',
     ];
 
-    /**
-     * Attribute casting.
-     */
     protected function casts(): array
     {
         return [
+            'platform' => DevicePlatform::class,
             'last_login_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'is_active' => 'boolean',
@@ -63,50 +46,39 @@ class Device extends Model
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function presence()
+    public function presence(): HasOne
     {
         return $this->hasOne(UserPresence::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Query Scopes
-    |--------------------------------------------------------------------------
-    */
+    public function typingStatuses(): HasMany
+    {
+        return $this->hasMany(TypingStatus::class);
+    }
+
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(DeviceSession::class);
+    }
 
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helper Methods
-    |--------------------------------------------------------------------------
-    */
-
     public function isMobile(): bool
     {
-        return in_array($this->platform, [
-            self::PLATFORM_ANDROID,
-            self::PLATFORM_IOS,
-        ], true);
+        return $this->platform?->isMobile() ?? false;
     }
 
     public function isWeb(): bool
     {
-        return $this->platform === self::PLATFORM_WEB;
+        return $this->platform === DevicePlatform::Web;
     }
 
     public function markOnline(): void
@@ -122,16 +94,4 @@ class Device extends Model
             'is_active' => false,
         ]);
     }
-
-    public function typingStatuses(): HasMany
-    {
-        return $this->hasMany(TypingStatus::class);
-    }
-
-    public function sessions(): HasMany
-    {
-        return $this->hasMany(DeviceSession::class, 'device_id');
-    }
-
-
 }

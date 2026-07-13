@@ -2,28 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\MemberRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ConversationMember extends Model
 {
     use HasFactory;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Roles
-    |--------------------------------------------------------------------------
-    */
-
-    public const ROLE_OWNER = 'owner';
-    public const ROLE_ADMIN = 'admin';
-    public const ROLE_MODERATOR = 'moderator';
-    public const ROLE_MEMBER = 'member';
-
-    /**
-     * Mass Assignable
-     */
     protected $fillable = [
         'conversation_id',
         'user_id',
@@ -35,12 +22,10 @@ class ConversationMember extends Model
         'is_archived',
     ];
 
-    /**
-     * Attribute Casting
-     */
     protected function casts(): array
     {
         return [
+            'role' => MemberRole::class,
             'joined_at' => 'datetime',
             'left_at' => 'datetime',
             'is_muted' => 'boolean',
@@ -50,41 +35,20 @@ class ConversationMember extends Model
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Conversation
-     */
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);
     }
 
-    /**
-     * User
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Last Read Message
-     */
     public function lastReadMessage(): BelongsTo
     {
         return $this->belongsTo(Message::class, 'last_read_message_id');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Query Scopes
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeActive($query)
     {
@@ -104,33 +68,24 @@ class ConversationMember extends Model
     public function scopeAdmins($query)
     {
         return $query->whereIn('role', [
-            self::ROLE_OWNER,
-            self::ROLE_ADMIN,
+            MemberRole::Owner,
+            MemberRole::Admin,
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helper Methods
-    |--------------------------------------------------------------------------
-    */
-
     public function isOwner(): bool
     {
-        return $this->role === self::ROLE_OWNER;
+        return $this->role === MemberRole::Owner;
     }
 
     public function isAdmin(): bool
     {
-        return in_array($this->role, [
-            self::ROLE_OWNER,
-            self::ROLE_ADMIN,
-        ], true);
+        return $this->role?->isPrivileged() ?? false;
     }
 
     public function isModerator(): bool
     {
-        return $this->role === self::ROLE_MODERATOR;
+        return $this->role === MemberRole::Moderator;
     }
 
     public function hasLeft(): bool

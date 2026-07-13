@@ -7,15 +7,14 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-
 
 /**
  * @property int $id
@@ -51,15 +50,37 @@ class User extends Authenticatable implements PasskeyUser
         ];
     }
 
-
-        public function conversations()
+    public function memberships(): HasMany
     {
         return $this->hasMany(ConversationMember::class);
+    }
+
+    /**
+     * @deprecated Use memberships() — kept for backward compatibility.
+     */
+    public function conversations(): HasMany
+    {
+        return $this->memberships();
+    }
+
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function devices(): HasMany
+    {
+        return $this->hasMany(Device::class);
     }
 
     public function messageReads(): HasMany
     {
         return $this->hasMany(MessageRead::class);
+    }
+
+    public function messageDeliveries(): HasMany
+    {
+        return $this->hasMany(MessageDelivery::class);
     }
 
     public function messageReactions(): HasMany
@@ -75,5 +96,20 @@ class User extends Authenticatable implements PasskeyUser
     public function typingStatuses(): HasMany
     {
         return $this->hasMany(TypingStatus::class);
+    }
+
+    public function blockedUsers(): HasMany
+    {
+        return $this->hasMany(BlockedUser::class, 'blocker_id');
+    }
+
+    public function blockedBy(): HasMany
+    {
+        return $this->hasMany(BlockedUser::class, 'blocked_id');
+    }
+
+    public function createdConversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'created_by');
     }
 }

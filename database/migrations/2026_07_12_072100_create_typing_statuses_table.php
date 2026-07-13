@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_presences', function (Blueprint $table) {
+        Schema::create('typing_statuses', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('conversation_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->foreignId('user_id')
                 ->constrained()
@@ -23,21 +27,12 @@ return new class extends Migration
                 ->constrained()
                 ->nullOnDelete();
 
-            $table->enum('status', [
-                'online',
-                'offline',
-                'away',
-                'busy',
-            ])->default('offline');
-
-            $table->string('socket_id')->nullable();
-            $table->timestamp('last_seen')->nullable();
+            $table->timestamp('started_at')->useCurrent();
+            $table->timestamp('expires_at');
             $table->timestamps();
 
-            $table->unique('user_id');
-            $table->index('status');
-            $table->index('last_seen');
-            $table->index('socket_id');
+            $table->unique(['conversation_id', 'user_id']);
+            $table->index('expires_at');
         });
     }
 
@@ -46,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_presences');
+        Schema::dropIfExists('typing_statuses');
     }
 };

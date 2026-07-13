@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\ConversationType;
 use App\Models\Conversation;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,15 +12,39 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ConversationFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = Conversation::class;
+
     public function definition(): array
     {
         return [
-            //
+            'type' => ConversationType::Private,
+            'created_by' => User::factory(),
+            'name' => null,
+            'last_message_id' => null,
         ];
+    }
+
+    public function private(): static
+    {
+        return $this->state(fn () => [
+            'type' => ConversationType::Private,
+            'name' => null,
+        ]);
+    }
+
+    public function group(): static
+    {
+        return $this->state(fn () => [
+            'type' => ConversationType::Group,
+            'name' => fake()->words(2, true).' Chat',
+        ]);
+    }
+
+    public function channel(): static
+    {
+        return $this->state(fn () => [
+            'type' => ConversationType::Channel,
+            'name' => '#'.fake()->slug(2),
+        ]);
     }
 }

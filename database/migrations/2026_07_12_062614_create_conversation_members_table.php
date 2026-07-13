@@ -14,12 +14,6 @@ return new class extends Migration
         Schema::create('conversation_members', function (Blueprint $table) {
             $table->id();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Relationships
-            |--------------------------------------------------------------------------
-            */
-
             $table->foreignId('conversation_id')
                 ->constrained()
                 ->cascadeOnDelete();
@@ -28,69 +22,26 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Member Information
-            |--------------------------------------------------------------------------
-            */
-
+            // owner, admin, moderator, member
             $table->string('role', 30)->default('member');
-            // member, admin, moderator, owner
 
             $table->timestamp('joined_at')->useCurrent();
             $table->timestamp('left_at')->nullable();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Read Tracking
-            |--------------------------------------------------------------------------
-            */
-
+            // Denormalized read cursor; FK added after messages table exists.
             $table->unsignedBigInteger('last_read_message_id')->nullable();
-
-            /*
-            |--------------------------------------------------------------------------
-            | User Preferences
-            |--------------------------------------------------------------------------
-            */
 
             $table->boolean('is_muted')->default(false);
             $table->boolean('is_archived')->default(false);
 
             $table->timestamps();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Constraints
-            |--------------------------------------------------------------------------
-            */
+            $table->unique(['conversation_id', 'user_id']);
 
-            $table->unique([
-                'conversation_id',
-                'user_id'
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Indexes
-            |--------------------------------------------------------------------------
-            */
-
-            $table->index('user_id');
-            $table->index('conversation_id');
             $table->index('role');
             $table->index('joined_at');
-
-            /*
-            |--------------------------------------------------------------------------
-            | Foreign Keys
-            |--------------------------------------------------------------------------
-            */
-
-            $table->foreign('last_read_message_id')
-                ->references('id')
-                ->on('messages')
-                ->nullOnDelete();
+            $table->index(['user_id', 'is_archived']);
+            $table->index(['conversation_id', 'last_read_message_id']);
         });
     }
 

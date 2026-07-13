@@ -2,16 +2,21 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Device;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DeviceSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        //
+        $users = User::query()->inRandomOrder()->limit(140)->get();
+
+        foreach ($users as $user) {
+            Device::factory()
+                ->count(fake()->numberBetween(1, 3))
+                ->for($user)
+                ->create();
+        }
     }
 }

@@ -12,94 +12,57 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
-
-            // Primary Key
             $table->id();
 
-            // Public Identifier
-            $table->char('uuid', 36)->unique();
+            $table->uuid('uuid')->unique();
 
-            // Conversation
             $table->foreignId('conversation_id')
                 ->constrained('conversations')
                 ->cascadeOnDelete();
 
-            // Sender
             $table->foreignId('sender_id')
                 ->constrained('users')
                 ->cascadeOnDelete();
 
-            // Thread Parent Message
             $table->foreignId('parent_message_id')
                 ->nullable()
                 ->constrained('messages')
                 ->nullOnDelete();
 
-            // Reply Message
             $table->foreignId('reply_to_id')
                 ->nullable()
                 ->constrained('messages')
                 ->nullOnDelete();
 
-            // Forwarded Message
             $table->foreignId('forwarded_from_id')
                 ->nullable()
                 ->constrained('messages')
                 ->nullOnDelete();
 
-            // Message Body
             $table->longText('body')->nullable();
 
-            // Message Type
-            // $table->enum('message_type', [
-            //     'text',
-            //     'image',
-            //     'video',
-            //     'audio',
-            //     'file',
-            //     'voice_note',
-            //     'system',
-            // ])->default('text');
+            // text=0, image=1, video=2, audio=3, file=4, voice_note=5, system=6, gif=7
+            $table->unsignedTinyInteger('message_type')->default(0);
 
-            $table->unsignedTinyInteger('message_type');
-
-            // Extra Information
             $table->json('metadata')->nullable();
 
-            // Timestamps
             $table->timestamp('sent_at')->nullable();
-
             $table->timestamp('edited_at')->nullable();
-
-            $table->softDeletes(); // deleted_at
-
+            $table->softDeletes();
             $table->timestamps();
 
-            /*
-            |--------------------------------------------------------------------------
-            | Indexes
-            |--------------------------------------------------------------------------
-            */
-
             $table->index(['conversation_id', 'id']);
-
             $table->index(['conversation_id', 'sent_at']);
-
             $table->index('sender_id');
-
             $table->index('reply_to_id');
-
             $table->index('parent_message_id');
-
             $table->index('forwarded_from_id');
+            $table->index('message_type');
 
-            /*
-            |--------------------------------------------------------------------------
-            | Full Text Search
-            |--------------------------------------------------------------------------
-            */
-
-            $table->fullText('body');
+            // FULLTEXT is not supported on SQLite (local/testing default).
+            if (in_array(Schema::getConnection()->getDriverName(), ['mysql', 'mariadb', 'pgsql'], true)) {
+                $table->fullText('body');
+            }
         });
     }
 
